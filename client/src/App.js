@@ -11,8 +11,7 @@ import PlayForm from "./components/PlayForm";
 import {Button} from "@mui/material";
 import {store} from "./store/store";
 import {Provider} from "react-redux";
-
-
+import { socket } from './socket';
 
 export const themeMain = createTheme(optionsMainTheme);
 
@@ -28,47 +27,18 @@ function App() {
     const handlePlayerSelection = (player) => {
         setPLayer(player);
     };
-
-    const connectToWallet = async () => {
-        // //check metamask is installed
-        // if (!window.ethereum) {
-        //     alert('Please download metamask');
-        // }
-        // // instantiate Web3 with the injected provider
-        // const web3 = new Web3(window.ethereum);
-        //
-        // //request user to connect accounts (Metamask will prompt)
-        // await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-        //get the connected accounts
-        // const accounts = await web3.eth.getAccounts();
-        //
-        // dispatch(setAccount(web3));
-        //
-        // //show the first connected account in the react page
-        // console.log(web3);
-
-
-
-    };
-
-  return (
-      <ThemeProvider theme={themeMain}>
-          <CssBaseline/>
-          <Header account={account}/>
-        <div className="App">
-            <PlayForm move={move} player={player}/>
-            <MoveSelection onSelect={handleMoveSelection}/>
-            <PlayerSelection onSelect={handlePlayerSelection}/>
-            <Button
-                onClick={connectToWallet}
-                variant="btn-success"
-            >
-                Connect to wallet
-            </Button>
-        </div>
-      </ThemeProvider>
-  );
+    
+    return (
+        <ThemeProvider theme={themeMain}>
+            <CssBaseline/>
+            <Header account={account}/>
+            <div className="App">
+                <PlayForm move={move} player={player}/>
+                <MoveSelection onSelect={handleMoveSelection}/>
+                <PlayerSelection onSelect={handlePlayerSelection}/>
+            </div>
+        </ThemeProvider>
+    );
 }
 
 export default App;

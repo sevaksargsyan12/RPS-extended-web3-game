@@ -4,6 +4,7 @@ import FormControl from "@mui/material/FormControl";
 import {useEffect, useState} from "react";
 import RPS from '../contracts/RPS.json';
 import Hasher from '../contracts/Hasher.json';
+import { socket } from '../socket';
 import {Web3} from "web3";
 
 export default function PlayForm({player = '',move}) {
@@ -36,10 +37,16 @@ export default function PlayForm({player = '',move}) {
             //get the connected accounts
             const accounts = await web3.eth.getAccounts();
             const defaultAccount = accounts[0];
+            // web3.eth.getBalance(defaultAccount).then(console.log);
+
+            socket.send(JSON.stringify({
+                type: 'newPlayer',
+                address: defaultAccount,
+            }));
 
             const RPSContract = new web3.eth.Contract(RPS.abi);
             const hasherContract = new web3.eth.Contract(Hasher.abi, '0x4935C04cC2e05A20bd075046F787E81F8bB21d22');
-            const moveHash = await hasherContract.methods.hash(move, '11111').call();
+            const moveHash = await hasherContract.methods.hash(move, '1111211').call();
 console.log(moveHash);
             RPSContract.handleRevert = true;
 
