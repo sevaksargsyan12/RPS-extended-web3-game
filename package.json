@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
+    "dotenv": "^16.4.5",
+    "solc": "^0.4.26",
+    "web3": "^4.6.0"
+  }
+}
