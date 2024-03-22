@@ -26,7 +26,7 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
                     <em>None</em>
                 </MenuItem>
 
-                {items.map((item) => (<MenuItem sx={{my: 1}} key={item.icon} value={item.value} sx={{'height': '50px', 'padding': '14px'}}>
+                {items.map((item) => (<MenuItem sx={{my: 1}} key={item.value} value={item.value} sx={{'height': '50px', 'padding': '14px'}}>
                     <br/>
                     <Typography component='span' sx={{mr: 2}}>{item.label}</Typography>
                     <Box

@@ -28,6 +28,17 @@ wss.on('connection', (ws) => {
         }
       });
     }
+    if (data.type === 'newGameRequest') {
+      wss.clients.forEach((client) => {
+        // Send the player a request to play. 
+        if (client.readyState === WebSocket.OPEN && client.address === data.playerAddress) {
+          client.send(JSON.stringify({
+            type: 'updatedGameRequest',
+            contractAddress: data.contractAddress,
+          }));
+        }
+      });
+    }
   });
 
   ws.on('close', () => {

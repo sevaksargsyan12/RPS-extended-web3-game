@@ -1,3 +1,4 @@
+import _ from 'underscore';
 import * as React from 'react';
 import SelectBox from "../shared/components/SelectBox";
 import {icons} from "../shared/icons";
@@ -8,7 +9,7 @@ import FormControl from "@mui/material/FormControl";
 export default function PlayerSelection({onSelect}) {
     const players = useSelector((state) => state.players.players)
     // const [playerId, setPlayerId] = React.useState('');
-    const playersOptions = players.map((p) => ({
+    const playersOptions = _.uniq(players).map((p) => ({
         value: p,
         label: p,
     }));
