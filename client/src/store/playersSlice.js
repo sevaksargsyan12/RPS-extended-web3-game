@@ -14,7 +14,6 @@ export const playersSlice = createSlice({
             // which detects changes to a "draft state" and produces a brand new
             // immutable state based off those changes
             state.players = action.payload;
-            console.log('state.players------>>>>>', action.payload);
         },
         // decrement: (state) => {
         //     state.value -= 1

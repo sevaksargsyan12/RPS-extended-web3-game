@@ -1,10 +1,10 @@
-import { configureStore } from '@reduxjs/toolkit'
+import { configureStore } from "@reduxjs/toolkit";
 import playersSlice from "./playersSlice";
-import etheriumSlice from "./etheriumSlice";
+import gameSlice from "./gameSlice";
 
 export const store = configureStore({
     reducer: {
         players: playersSlice,
-        account: etheriumSlice,
+        gameState: gameSlice,
     },
 })

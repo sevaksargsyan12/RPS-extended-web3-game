@@ -1,138 +1,219 @@
-import {createTheme, CssBaseline, ThemeProvider} from "@mui/material";
-import Header from "./components/Header";
-import {optionsMainTheme} from "./ui/theme/config";
-import { useSelector, useDispatch } from 'react-redux';
-import {setAccount} from "./store/etheriumSlice";
-import {setPlayers} from "./store/playersSlice";
-import MoveSelection from "./components/MoveSelection";
-import './App.css';
-import PlayerSelection from "./components/PlayerSelection";
+import "./App.css";
 import * as React from "react";
-import PlayForm from "./components/PlayForm";
-import {Button} from "@mui/material";
-import {store} from "./store/store";
-import {Provider} from "react-redux";
-import RPS from './contracts/RPS.json';
-import Hasher from './contracts/Hasher.json';
-import {Web3} from "web3";
+import { optionsMainTheme } from "./ui/theme/config";
+import { useSelector, useDispatch } from "react-redux";
+import Header from "./components/Header";
+import MoveSelection from "./components/MoveSelection";
+import StakeSelection from "./components/StakeSelection";
+import PlayerSelection from "./components/PlayerSelection";
+import { setPlayers } from "./store/playersSlice";
+import { updateGameState, clearGameState } from "./store/gameSlice";
+import {
+    createTheme,
+    CssBaseline,
+    ThemeProvider,
+    Alert,
+    Button,
+} from "@mui/material";
+import {
+    initSocket,
+    sendMessage,
+    disconnectSocket,
+    listenForMessages,
+} from "./services/socket";
+import {
+    winner,
+    initWeb3,
+    playTheGame,
+    solveTheGame,
+    startNewGame,
+    onTxConfirmation,
+    fetchDataFromContract,
+} from "./services/web3";
 
 export const themeMain = createTheme(optionsMainTheme);
 
+const { useEffect, useState } = React;
+
 function App() {
-    const account = useSelector((state) => state.account.account)
+    const gameState = useSelector((state) => state.gameState);
     const dispatch = useDispatch()
-    const [player, setPLayer] = React.useState('');
-    const [move, setMove] = React.useState('');
-    let web3;
-    let socket;
-    let defaultAccount;
-    const handleMoveSelection = (move) => {
-        setMove(move);
-    };
+    const [player, setPLayer] = useState('');
+    const [stake, setStake] = useState('');
+    const [move, setMove] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-    const handlePlayerSelection = (player) => {
-        setPLayer(player);
-    };
+    useEffect(() => {
+        (async () => {
+            // Connect to socket
+            await initSocket();
+            setSuccessMessage('CONNECTED!')
+            // Connect to Metamask
+            const defaultAccount = await initWeb3();
 
-    const handleNewPlay = async (address) => {
-        if (!web3) {
+            dispatch(updateGameState({
+                myAddress: defaultAccount,
+            }));
+            // Send other players my address. I'm online
+            sendMessage({
+                type: 'newPlayer',
+                address: defaultAccount,
+            });
+
+            // Listen for socket messages
+            listenForMessages({
+                updatedPlayersList: (data) => dispatch(setPlayers(data.addressList)),
+                newGameRequest: async (data) => {
+                    const { accAddress1, stake } = await fetchDataFromContract(data.contractAddress);
+                    const accepted = window.confirm(`New Game request from ${accAddress1} with stake ${stake}!`);
+                    if (!accepted) {
+                        return;
+                    }
+                    
+                    dispatch(updateGameState({
+                        stake,
+                        accAddress1,
+                        accAddress2: gameState.myAddress,
+                        contractAddress: data.contractAddress,
+                    }));
+                },
+                solveTheGame: async (data) => {
+                    if (!gameState.moveHash) {
+                        return;
+                    }
+                    let theWinner = 'tie';
+                    const { move2 } = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
+                    if (winner(gameState.move, move2)) {
+                        theWinner = gameState.myAddress;
+                        console.log('Congratulations!!!!!');
+                    } if (winner(move2, gameState.move)) {
+                        theWinner = gameState.accAddress2;
+                        console.log('The Winner is - ', gameState.accAddress2);
+                    }
+                    // Send the results to second player
+                    sendMessage({
+                        type: 'theWinner',
+                        playerAddress: gameState.accAddress2,
+                        theWinner,
+                    });
+                },
+                theWinner: (data) => {
+                    if (data.theWinner === gameState.myAddress) {
+                        console.log('Congratulations!!!!!');
+                    } if (data.theWinner === 'tie') {
+                        console.log('It is a tie!')
+                    } else {
+                        console.log('The Winner is - ', data.theWinner);
+                    }
+                }
+            })
+
+        })();
+
+        return () => {
+            disconnectSocket();
+        }
+    }, []);
+    useEffect(() => {
+        // in case if there is pending transaction, keep checking the status
+        if (gameState.txHash && !gameState.txStatus) {
+            onTxConfirmation(gameState.txHash, (error, data) => {
+                setSuccessMessage('TRANSACTION CONFIRMED!!!');
+                console.log('TRANSACTION CONFIRMED!!!', data);
+                if (error || !data?.status) {
+                    // @TODO show error message, reset the game...
+                    console.error(error, data, '[[[[[[[[[[');
+                    return;
+                }
+                // Player 1 tx confirmation
+                if (gameState.myAddress === gameState.accAddress1) {
+                    dispatch(updateGameState({
+                        txStatus: true,
+                        contractAddress: data.contractAddress,
+                    }));
+                    sendMessage({
+                        type: 'newGameRequest',
+                        playerAddress: gameState.accAddress2,
+                        contractAddress: data.contractAddress,
+                    });
+                }
+                // Player 2 tx confirmation
+                if (gameState.myAddress === gameState.accAddress2) {
+                    dispatch(updateGameState({
+                        txStatus: true,
+                    }));
+                    sendMessage({
+                        type: 'solveTheGame',
+                        playerAddress: gameState.accAddress1,
+                        contractAddress: data.to,
+                    });
+                }
+
+            })
+        }
+        return () => {}
+    }, [gameState.txHash]);
+
+    const play = async (address) => {
+        if (!gameState.myAddress) {
             alert('Please connect to metamask');
             return;
         }
-        if (!socket) {
-            alert('Please reload the page');
+        if (gameState.txHash) {
+            alert('There is ongoing game!');
             return;
         }
-        const RPSContract = new web3.eth.Contract(RPS.abi);
-        const hasherContract = new web3.eth.Contract(Hasher.abi, '0x4935C04cC2e05A20bd075046F787E81F8bB21d22');
-        const moveHash = await hasherContract.methods.hash(move, '1111211').call();
-console.log(move, player, 'moveHash -> ', moveHash);
-        RPSContract.handleRevert = true;
+        // Start a new game
+        if (!gameState.contractAddress) {
+            try {
+                const { txHash, moveHash } = await startNewGame(move, player, stake, gameState.myAddress);
 
-        const contractDeployer = RPSContract.deploy({
-            data: RPS.bytecode,
-            arguments: [moveHash, player],
-        });
-        const gas = await contractDeployer.estimateGas({
-            from: defaultAccount,
-        });
-        console.log('estimated gas:', gas);
-
-        try {
-            const tx = await contractDeployer.send({
-                from: defaultAccount,
-                gas,
-                gasPrice: 10000000000,
-            });
-            console.log(tx, '   Contract deployed at address: ' + tx.options.address);
-            socket.send(JSON.stringify({
-                type: 'newGameRequest',
-                playerAddress: player,
-                contractAddress: tx.options.address,
-            }));
-        } catch (error) {
-            console.error(error);
+                dispatch(updateGameState({
+                    move,
+                    stake,
+                    txHash,
+                    moveHash,
+                    accAddress1: gameState.myAddress,
+                    accAddress2: player,
+                    lastAction: new Date().getTime(),
+                }));
+            } catch (error) {
+                console.error(error);
+            }
         }
-        
+        // Continue existing game
+        if (gameState.contractAddress) {
+            try {
+                const { txHash } = await playTheGame(move, gameState.stake, gameState.contractAddress, gameState.myAddress);
+
+                dispatch(updateGameState({
+                    move,
+                    txHash,
+                    lastAction: new Date().getTime(),
+                }));
+            } catch (error) {
+                console.error(error);
+            }
+        }
     };
 
-    // SOCKET
-    (() => {
-        if (socket) {
-            return;
-        }
-        const socketI = new WebSocket('ws://0397-37-252-92-141.ngrok-free.app');
-        socketI.onopen = (event, a) => {
-            console.log(event, a);
-            socket = socketI;
-
-            // WEB3
-            (async () => {
-                if (web3) {
-                    return;
-                }
-
-                //check metamask is installed
-                if (!window.ethereum) {
-                    alert('Please download metamask');
-                }
-                // instantiate Web3 with the injected provider
-                web3 = new Web3(window.ethereum);
-
-                //request user to connect accounts (Metamask will prompt)
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                //get the connected accounts
-                const accounts = await web3.eth.getAccounts();
-                defaultAccount = accounts[0];
-                // web3.eth.getBalance(defaultAccount).then(console.log);
-
-                socket.send(JSON.stringify({
-                    type: 'newPlayer',
-                    address: defaultAccount,
-                }));
-            })();
-        };
-        // Listen for messages
-        socketI.addEventListener('message', (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'updatedPlayersList') {
-                console.log('updatedPlayersList -> ', data.addressList);
-                dispatch(setPlayers(data.addressList));
-            }
-            if (data.type === 'updatedGameRequest') {
-                console.log('updatedGameRequest -> ', data.contractAddress);
-            }
-        });
-    })();
+    const restartTheGame = () => {
+        dispatch(clearGameState());
+    }
 
     return (
         <ThemeProvider theme={themeMain}>
             <CssBaseline/>
-            <Header account={account}/>
-            <div className="App">
-                <PlayForm move={move} player={player} onNewPlay={handleNewPlay}/>
-                <MoveSelection onSelect={handleMoveSelection}/>
-                <PlayerSelection onSelect={handlePlayerSelection}/>
+            <Header/>
+            <div className="App">{JSON.stringify(gameState)}
+                {!gameState.txHash && <Button color='success' onClick={play}>Play</Button>}
+                {!!gameState.txHash && <Button onClick={restartTheGame}>Restart the game</Button>}
+                <MoveSelection onSelect={setMove}/>
+                <PlayerSelection onSelect={setPLayer}/>
+                <StakeSelection onSelect={setStake}/>
+                { errorMessage && <Alert severity="error">{errorMessage}</Alert> }
+                { successMessage && <Alert severity="success">{successMessage}</Alert> }
             </div>
         </ThemeProvider>
     );

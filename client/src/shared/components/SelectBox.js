@@ -7,10 +7,13 @@ import {Box, Typography} from "@mui/material";
 import {useState} from "react";
 // import paper from '../../shared/icons/paper.png';
 
-export default function SelectBox({title = 'Select player', items = [], onSelect}) {
+export default function SelectBox({title = 'Select player', items = [], onSelect, defaultValue}) {
+    const [selectedValue, setSelectedValue] = React.useState('');
     const handleChange = (event) => {
         onSelect(event.target.value);
+        setSelectedValue(event.target.value);
     };
+    console.log(selectedValue, 'selectedValue', typeof selectedValue);
 
     return (
         <>
@@ -18,7 +21,8 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
             <Select
                 labelId="demo-simple-select-standard-label"
                 id="demo-simple-select-standard"
-                value=""
+                value={selectedValue}
+                defaultValue={defaultValue}
                 label={title}
                 onChange={handleChange}
             >
