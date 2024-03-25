@@ -8,6 +8,7 @@ const initWeb3 = async () => {
 	//check metamask is installed
     if (!window.ethereum) {
         alert('Please download metamask');
+		return ;
     }
     // instantiate Web3 with the injected provider
     web3 = new Web3(window.ethereum);
@@ -84,13 +85,12 @@ const onTxConfirmation = (txHash, cb) => {
 		console.log('checkcheckcheckcheckcheck');
 		try {
         	const receipt = await web3.eth.getTransactionReceipt(txHash);
-        	if (receipt) {
+        	if (receipt?.status) {
                 clearInterval(timer);
-                cb(null, receipt);
+                cb(receipt);
             }
         } catch(error) {
-        	clearInterval(timer);
-            cb(error);
+			// Continue to check
         }
     }, 1000);
 }

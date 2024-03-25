@@ -40,3 +40,28 @@
     transform: rotate(360deg);
   }
 }
+
+.game {
+
+}
+
+.custom-select,
+.stake-input {
+  width: 440px;
+}
+
+
+.custom-select br {
+  display: none;
+}
+
+.game-button {
+  min-width: 120px !important;
+}
+
+@media screen and (max-width :560px) {
+  .custom-select,
+  .stake-input {
+    width: 96%;
+  }
+}

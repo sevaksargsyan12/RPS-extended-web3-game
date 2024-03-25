@@ -1,7 +1,7 @@
 let socket;
 
 const initSocket = () => {//@TODO move to config
-	socket = new WebSocket('ws://557c-2a00-cc47-2461-e800-8cf2-d623-ec78-4fe6.ngrok-free.app');
+	socket = new WebSocket('ws://localhost:8080');
 
 	return new Promise(resolve => {
 		socket.onopen = resolve;
@@ -28,6 +28,7 @@ const listenForMessages = async (messages) => {
 
 const sendMessage = async (data) => {
 	if(!socket) {
+		console.log('INITSOCKET')
   		await initSocket();
   	}
 	socket.send(JSON.stringify(data));

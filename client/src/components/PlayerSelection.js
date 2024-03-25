@@ -4,8 +4,8 @@ import FormControl from '@mui/material/FormControl';
 import SelectBox from '../shared/components/SelectBox';
 
 export default function PlayerSelection({onSelect}) {
-    const players = useSelector((state) => state.players.players)
-    const gameState = useSelector((state) => state.gameState);
+    const players = useSelector((state) => state.playersStore.players)
+    const gameState = useSelector((state) => state.gameStateStore.gameState);
     const playersOptions = _.uniq(players).map((p) => ({
         value: p,
         label: p,

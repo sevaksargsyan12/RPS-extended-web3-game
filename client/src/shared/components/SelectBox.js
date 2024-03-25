@@ -5,10 +5,9 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import {Box, Typography} from "@mui/material";
 import {useState} from "react";
-// import paper from '../../shared/icons/paper.png';
 
-export default function SelectBox({title = 'Select player', items = [], onSelect, defaultValue}) {
-    const [selectedValue, setSelectedValue] = React.useState('');
+export default function SelectBox({title = 'Select player', items = [], onSelect, defaultValue, containerClass = 'custom-select'}) {
+    const [selectedValue, setSelectedValue] = useState('');
     const handleChange = (event) => {
         onSelect(event.target.value);
         setSelectedValue(event.target.value);
@@ -19,6 +18,7 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
         <>
             <InputLabel id="demo-simple-select-standard-label">{title}</InputLabel>
             <Select
+                className={containerClass}
                 labelId="demo-simple-select-standard-label"
                 id="demo-simple-select-standard"
                 value={selectedValue}
@@ -33,7 +33,8 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
                 {items.map((item) => (<MenuItem sx={{my: 1}} key={item.value} value={item.value} sx={{'height': '50px', 'padding': '14px'}}>
                     <br/>
                     <Typography component='span' sx={{mr: 2}}>{item.label}</Typography>
-                    <Box
+                    {item?.icon &&
+                        <Box
                         component="img"
                         sx={{
                             height: 50,
@@ -42,9 +43,9 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
                             maxHeight: {xs: 233, md: 167},
                             maxWidth: {xs: 350, md: 250},
                         }}
-                        alt="The house from the offer."
+                        alt={title}
                         src={item.icon}
-                    />
+                    />}
                 </MenuItem>))}
             </Select>
         </>

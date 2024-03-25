@@ -31,10 +31,8 @@ export const optionsMainTheme = {
                     textTransform: "none",
                     fontSize: "1rem",
                     border: "none",
-                    // background: '#0D0D0B',
-                    background: '#0D0D0B',
-                    color: "#F9E799",
-                    // border: "1px solid #fff",
+                    background: '#398a5c',
+                    color: "#FFF",
                     "&:hover": {
                         backgroundColor: "#F9E799",
                         color: "#0D0D0B"
@@ -51,7 +49,6 @@ export const optionsMainTheme = {
                 body: {
                     margin: "0",
                     padding: "0",
-                    // fontFamily: "Comic Sans MS, sans-serif",
                 }
             }
         }

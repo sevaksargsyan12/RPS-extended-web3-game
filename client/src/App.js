@@ -1,19 +1,21 @@
 import "./App.css";
 import * as React from "react";
-import { optionsMainTheme } from "./ui/theme/config";
-import { useSelector, useDispatch } from "react-redux";
+import {optionsMainTheme} from "./ui/theme/config";
+import {useSelector, useDispatch} from "react-redux";
 import Header from "./components/Header";
 import MoveSelection from "./components/MoveSelection";
 import StakeSelection from "./components/StakeSelection";
 import PlayerSelection from "./components/PlayerSelection";
-import { setPlayers } from "./store/playersSlice";
-import { updateGameState, clearGameState } from "./store/gameSlice";
+import PrettyConfirm from "./shared/components/PrettyConfirm";
+import {setPlayers} from "./store/playersSlice";
+import {updateGameState, clearGameState} from "./store/gameSlice";
 import {
     createTheme,
     CssBaseline,
     ThemeProvider,
     Alert,
-    Button,
+    Snackbar,
+    Button, Box,
 } from "@mui/material";
 import {
     initSocket,
@@ -33,16 +35,18 @@ import {
 
 export const themeMain = createTheme(optionsMainTheme);
 
-const { useEffect, useState } = React;
+const {useEffect, useState} = React;
 
 function App() {
-    const gameState = useSelector((state) => state.gameState);
+    const gameState = useSelector((state) => state.gameStateStore.gameState);
     const dispatch = useDispatch()
     const [player, setPLayer] = useState('');
     const [stake, setStake] = useState('');
     const [move, setMove] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [dialogue, setDialogue] = useState(false);
+    const [dialogueContent, setDialogueContent] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -65,12 +69,12 @@ function App() {
             listenForMessages({
                 updatedPlayersList: (data) => dispatch(setPlayers(data.addressList)),
                 newGameRequest: async (data) => {
-                    const { accAddress1, stake } = await fetchDataFromContract(data.contractAddress);
-                    const accepted = window.confirm(`New Game request from ${accAddress1} with stake ${stake}!`);
+                    const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
+                    const accepted = window.confirm(`New Game request from ${accAddress1} with stake ${stake}! myAddress ${gameState.myAddress}`);
                     if (!accepted) {
                         return;
                     }
-                    
+
                     dispatch(updateGameState({
                         stake,
                         accAddress1,
@@ -83,11 +87,12 @@ function App() {
                         return;
                     }
                     let theWinner = 'tie';
-                    const { move2 } = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
+                    const {move2} = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
                     if (winner(gameState.move, move2)) {
                         theWinner = gameState.myAddress;
                         console.log('Congratulations!!!!!');
-                    } if (winner(move2, gameState.move)) {
+                    }
+                    if (winner(move2, gameState.move)) {
                         theWinner = gameState.accAddress2;
                         console.log('The Winner is - ', gameState.accAddress2);
                     }
@@ -101,7 +106,8 @@ function App() {
                 theWinner: (data) => {
                     if (data.theWinner === gameState.myAddress) {
                         console.log('Congratulations!!!!!');
-                    } if (data.theWinner === 'tie') {
+                    }
+                    if (data.theWinner === 'tie') {
                         console.log('It is a tie!')
                     } else {
                         console.log('The Winner is - ', data.theWinner);
@@ -118,14 +124,9 @@ function App() {
     useEffect(() => {
         // in case if there is pending transaction, keep checking the status
         if (gameState.txHash && !gameState.txStatus) {
-            onTxConfirmation(gameState.txHash, (error, data) => {
+            onTxConfirmation(gameState.txHash, (data) => {
+                console.log(gameState.myAddress === gameState.accAddress2, gameState.myAddress === gameState.accAddress1, 'TRANSACTION CONFIRMED!!!', data);
                 setSuccessMessage('TRANSACTION CONFIRMED!!!');
-                console.log('TRANSACTION CONFIRMED!!!', data);
-                if (error || !data?.status) {
-                    // @TODO show error message, reset the game...
-                    console.error(error, data, '[[[[[[[[[[');
-                    return;
-                }
                 // Player 1 tx confirmation
                 if (gameState.myAddress === gameState.accAddress1) {
                     dispatch(updateGameState({
@@ -140,9 +141,15 @@ function App() {
                 }
                 // Player 2 tx confirmation
                 if (gameState.myAddress === gameState.accAddress2) {
+                    console.log({
+                        type: 'solveTheGame',
+                        playerAddress: gameState.accAddress1,
+                        contractAddress: data.to,
+                    }, '1111111');
                     dispatch(updateGameState({
                         txStatus: true,
                     }));
+                    console.log('222222');
                     sendMessage({
                         type: 'solveTheGame',
                         playerAddress: gameState.accAddress1,
@@ -152,10 +159,20 @@ function App() {
 
             })
         }
-        return () => {}
+        return () => {
+        }
     }, [gameState.txHash]);
 
-    const play = async (address) => {
+    const play = async () => {
+        setDialogue(true);
+        setDialogueContent('kuku');
+        const accepted = await handleConfirmDialogAction();
+
+        if(accepted) {
+            console.log('dude');
+        } else {
+            console.log('confirmed');
+        }
         if (!gameState.myAddress) {
             alert('Please connect to metamask');
             return;
@@ -167,7 +184,7 @@ function App() {
         // Start a new game
         if (!gameState.contractAddress) {
             try {
-                const { txHash, moveHash } = await startNewGame(move, player, stake, gameState.myAddress);
+                const {txHash, moveHash} = await startNewGame(move, player, stake, gameState.myAddress);
 
                 dispatch(updateGameState({
                     move,
@@ -185,7 +202,7 @@ function App() {
         // Continue existing game
         if (gameState.contractAddress) {
             try {
-                const { txHash } = await playTheGame(move, gameState.stake, gameState.contractAddress, gameState.myAddress);
+                const {txHash} = await playTheGame(move, gameState.stake, gameState.contractAddress, gameState.myAddress);
 
                 dispatch(updateGameState({
                     move,
@@ -202,18 +219,40 @@ function App() {
         dispatch(clearGameState());
     }
 
+    const handleConfirmDialogAction = async function () {
+        console.log('--dialog--',arguments[0]);
+        return Promise.resolve(arguments[0]);
+    }
+
+    const playButtonAddProps = {disabled: !(move && player && stake)}
+
     return (
         <ThemeProvider theme={themeMain}>
             <CssBaseline/>
-            <Header/>
-            <div className="App">{JSON.stringify(gameState)}
-                {!gameState.txHash && <Button color='success' onClick={play}>Play</Button>}
-                {!!gameState.txHash && <Button onClick={restartTheGame}>Restart the game</Button>}
-                <MoveSelection onSelect={setMove}/>
-                <PlayerSelection onSelect={setPLayer}/>
-                <StakeSelection onSelect={setStake}/>
-                { errorMessage && <Alert severity="error">{errorMessage}</Alert> }
-                { successMessage && <Alert severity="success">{successMessage}</Alert> }
+            <Header account={gameState}/>
+            <PrettyConfirm onAction={handleConfirmDialogAction} open={dialogue} content={dialogueContent}/>
+            <div className="App">
+                <pre style={{display: 'none1'}}>{JSON.stringify(gameState)}</pre>
+                <Box className='game' sx={{mx: 'auto', p: 2, mt: 2,  boxShadow: 3, maxWidth: '620px' }}>
+                    <MoveSelection onSelect={setMove}/>
+                    <br/>
+                    <PlayerSelection onSelect={setPLayer}/>
+                    <br/>
+                    <StakeSelection onSelect={setStake}/>
+                    <br/>
+                    {!gameState.txHash &&
+                        <Button className='play-button game-button' {...playButtonAddProps} color='success' onClick={play}>Play</Button>}
+                    {!!gameState.txHash &&
+                        <Button className='restart-game-button game-button' onClick={restartTheGame}>Restart the game</Button>}
+                </Box>
+                {errorMessage &&
+                    <Snackbar open={!!errorMessage} autoHideDuration={4000} onClose={() => setErrorMessage('')}>
+                        <Alert severity="error">{errorMessage}</Alert>
+                    </Snackbar>}
+                {successMessage &&
+                    <Snackbar open={!!successMessage} autoHideDuration={4000} onClose={() => setSuccessMessage('')}>
+                        <Alert severity="success">{successMessage}</Alert>
+                    </Snackbar>}
             </div>
         </ThemeProvider>
     );
