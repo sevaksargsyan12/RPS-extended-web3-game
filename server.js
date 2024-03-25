@@ -17,8 +17,8 @@ wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     const data = JSON.parse(message);
 
+    console.log(`Received new message: ${JSON.stringify(data)}`);
     if (data.type === 'newPlayer') {
-      console.log(`Received newPlayerAddress: ${data.address}`);
       ws.address = data.address;
 
       wss.clients.forEach((client) => {
@@ -33,8 +33,34 @@ wss.on('connection', (ws) => {
         // Send the player a request to play. 
         if (client.readyState === WebSocket.OPEN && client.address === data.playerAddress) {
           client.send(JSON.stringify({
-            type: 'updatedGameRequest',
+            type: 'newGameRequest',
             contractAddress: data.contractAddress,
+          }));
+        }
+      });
+    }
+    if (data.type === 'solveTheGame') {
+      wss.clients.forEach((client) => {
+        // Send the player a request to play. 
+        if (client.readyState === WebSocket.OPEN &&
+          client.address?.toLowerCase() === data.playerAddress?.toLowerCase()
+        ) {
+          client.send(JSON.stringify({
+            type: 'solveTheGame',
+            contractAddress: data.contractAddress,
+          }));
+        }
+      });
+    }
+    if (data.type === 'theWinner') {
+      wss.clients.forEach((client) => {
+        // Send the player a request to play. 
+        if (client.readyState === WebSocket.OPEN &&
+          client.address?.toLowerCase() === data.playerAddress?.toLowerCase()
+        ) {
+          client.send(JSON.stringify({
+            type: 'theWinner',
+            theWinner: data.theWinner,
           }));
         }
       });
