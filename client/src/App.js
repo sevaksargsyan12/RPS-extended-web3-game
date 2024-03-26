@@ -6,7 +6,7 @@ import Header from "./components/Header";
 import MoveSelection from "./components/MoveSelection";
 import StakeSelection from "./components/StakeSelection";
 import PlayerSelection from "./components/PlayerSelection";
-import PrettyConfirm from "./shared/components/PrettyConfirm";
+import usePrettyConfirm from "./shared/components/PrettyConfirm";
 import {setPlayers} from "./store/playersSlice";
 import {updateGameState, clearGameState} from "./store/gameSlice";
 import {
@@ -26,10 +26,11 @@ import {
 import {
     winner,
     initWeb3,
+    onTimeout,
     playTheGame,
     solveTheGame,
     startNewGame,
-    onTxConfirmation,
+    getTransaction,
     fetchDataFromContract,
 } from "./services/web3";
 
@@ -38,7 +39,9 @@ export const themeMain = createTheme(optionsMainTheme);
 const {useEffect, useState} = React;
 
 function App() {
-    const gameState = useSelector((state) => state.gameStateStore.gameState);
+    const [getConfirmation, PrettyConfirm] = usePrettyConfirm();
+    const gameState = useSelector((state) => state.gameStateStore);
+    const players = useSelector((state) => state.playersStore.players);
     const dispatch = useDispatch()
     const [player, setPLayer] = useState('');
     const [stake, setStake] = useState('');
@@ -52,9 +55,9 @@ function App() {
         (async () => {
             // Connect to socket
             await initSocket();
-            setSuccessMessage('CONNECTED!')
             // Connect to Metamask
             const defaultAccount = await initWeb3();
+            setSuccessMessage('CONNECTED!')
 
             dispatch(updateGameState({
                 myAddress: defaultAccount,
@@ -64,16 +67,22 @@ function App() {
                 type: 'newPlayer',
                 address: defaultAccount,
             });
-
+console.log('[[[[', JSON.stringify(gameState));
             // Listen for socket messages
             listenForMessages({
                 updatedPlayersList: (data) => dispatch(setPlayers(data.addressList)),
                 newGameRequest: async (data) => {
                     const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
-                    const accepted = window.confirm(`New Game request from ${accAddress1} with stake ${stake}! myAddress ${gameState.myAddress}`);
-                    if (!accepted) {
+                    const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}! myAddress ${gameState.myAddress}`)
+                    if(!accepted) {
                         return;
                     }
+            console.log({
+                        stake,
+                        accAddress1,
+                        accAddress2: gameState.myAddress,
+                        contractAddress: data.contractAddress,
+                    }, '[[[[', JSON.stringify(players));
 
                     dispatch(updateGameState({
                         stake,
@@ -114,7 +123,6 @@ function App() {
                     }
                 }
             })
-
         })();
 
         return () => {
@@ -122,57 +130,69 @@ function App() {
         }
     }, []);
     useEffect(() => {
+        let timeoutInterval;
+        let txStatusInterval;
         // in case if there is pending transaction, keep checking the status
         if (gameState.txHash && !gameState.txStatus) {
-            onTxConfirmation(gameState.txHash, (data) => {
-                console.log(gameState.myAddress === gameState.accAddress2, gameState.myAddress === gameState.accAddress1, 'TRANSACTION CONFIRMED!!!', data);
+            txStatusInterval = setInterval(async () => {
+                const txData = await getTransaction(gameState.txHash);
+                if (!txData?.status) {
+                    // Continue to check...
+                    return;
+                }
+                console.log(gameState.myAddress === gameState.accAddress2, gameState.myAddress === gameState.accAddress1, 'TRANSACTION CONFIRMED!!!', txData);
                 setSuccessMessage('TRANSACTION CONFIRMED!!!');
                 // Player 1 tx confirmation
                 if (gameState.myAddress === gameState.accAddress1) {
                     dispatch(updateGameState({
                         txStatus: true,
-                        contractAddress: data.contractAddress,
+                        contractAddress: txData.contractAddress,
                     }));
                     sendMessage({
                         type: 'newGameRequest',
                         playerAddress: gameState.accAddress2,
-                        contractAddress: data.contractAddress,
+                        contractAddress: txData.contractAddress,
                     });
                 }
                 // Player 2 tx confirmation
                 if (gameState.myAddress === gameState.accAddress2) {
-                    console.log({
-                        type: 'solveTheGame',
-                        playerAddress: gameState.accAddress1,
-                        contractAddress: data.to,
-                    }, '1111111');
                     dispatch(updateGameState({
                         txStatus: true,
                     }));
-                    console.log('222222');
                     sendMessage({
                         type: 'solveTheGame',
                         playerAddress: gameState.accAddress1,
-                        contractAddress: data.to,
+                        contractAddress: txData.to,
                     });
                 }
 
-            })
+            }, 1000)
+        } else {
+            clearInterval(txStatusInterval);
+        }
+        // Waiting for other players game
+        if (gameState.txHash && gameState.txStatus && !gameState.theWinner && gameState.lastAction) {
+            timeoutInterval = setInterval(async () => {
+                const now = new Date();
+                const lastAction = new Date(gameState.lastAction);
+                console.log(now - lastAction, 1000*60*5, new Date());
+                if (now - lastAction < 1000*60*6) {
+                    return;
+                }
+                setErrorMessage('Timeout: player doesn\'t move. Resetting the game...');
+                await onTimeout(gameState.contractAddress, gameState.myAddress === gameState.accAddress2);
+                dispatch(clearGameState());
+            }, 60 * 1000);
+        } else {
+            clearInterval(timeoutInterval);
         }
         return () => {
+            clearInterval(timeoutInterval);
+            clearInterval(txStatusInterval);
         }
-    }, [gameState.txHash]);
+    }, [gameState.txHash, gameState.txStatus, gameState.theWinner, gameState.lastAction]);
 
     const play = async () => {
-        setDialogue(true);
-        setDialogueContent('kuku');
-        const accepted = await handleConfirmDialogAction();
-
-        if(accepted) {
-            console.log('dude');
-        } else {
-            console.log('confirmed');
-        }
         if (!gameState.myAddress) {
             alert('Please connect to metamask');
             return;
@@ -218,19 +238,13 @@ function App() {
     const restartTheGame = () => {
         dispatch(clearGameState());
     }
-
-    const handleConfirmDialogAction = async function () {
-        console.log('--dialog--',arguments[0]);
-        return Promise.resolve(arguments[0]);
-    }
-
-    const playButtonAddProps = {disabled: !(move && player && stake)}
+    const playButtonAddProps =  {disabled: false} // {disabled: !(move && player && stake)}
 
     return (
         <ThemeProvider theme={themeMain}>
             <CssBaseline/>
-            <Header account={gameState}/>
-            <PrettyConfirm onAction={handleConfirmDialogAction} open={dialogue} content={dialogueContent}/>
+            <Header/>
+            <PrettyConfirm />
             <div className="App">
                 <pre style={{display: 'none1'}}>{JSON.stringify(gameState)}</pre>
                 <Box className='game' sx={{mx: 'auto', p: 2, mt: 2,  boxShadow: 3, maxWidth: '620px' }}>

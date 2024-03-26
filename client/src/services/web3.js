@@ -95,20 +95,23 @@ const onTxConfirmation = (txHash, cb) => {
     }, 1000);
 }
 
-const onTimeout = (txHash, cb) => {
-	// let timer = window.setInterval(async () => {
-	// 	console.log('checktimeout');
-		// try {
-  //       	const receipt = await web3.eth.getTransactionReceipt(txHash);
-  //       	if (receipt) {
-  //               clearInterval(timer);
-  //               cb(null, receipt);
-  //           }
-  //       } catch(error) {
-  //       	clearInterval(timer);
-  //           cb(error);
-  //       }
-    // }, 1000);
+const getTransaction = async (txHash) => {
+	let txData;
+	try {
+		txData = await web3.eth.getTransactionReceipt(txHash);
+	} catch(e) {
+		console.log(e);
+	}
+	return txData;
+}
+
+const onTimeout = async (contractAddress, player1Timeout) => {
+	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
+	if (player1Timeout) {		
+		await RPSContract.methods.j1Timeout().call();
+	} else {
+		await RPSContract.methods.j2Timeout().call();
+	}
 }
 
 const fetchDataFromContract = async (contractAddress) => {
@@ -123,7 +126,6 @@ const fetchDataFromContract = async (contractAddress) => {
 }
 
 const winner = (player1, player2) => {
-	console.log(player1, player2, '000000000000')
     if (player1 === player2)
     	return false;
     else if (player1 % 2 === player2 % 2)
@@ -135,9 +137,10 @@ const winner = (player1, player2) => {
 export {
 	winner,
 	initWeb3,
+	onTimeout,
 	playTheGame,
 	solveTheGame,
 	startNewGame,
-	onTxConfirmation,
+	getTransaction,
 	fetchDataFromContract,
 }

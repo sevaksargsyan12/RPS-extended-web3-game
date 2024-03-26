@@ -3,10 +3,10 @@ import { TextField } from "@mui/material";
 import FormControl from "@mui/material/FormControl";
 
 export default function StakeSelection({onSelect}) {
-    const gameState = useSelector((state) => state.gameStateStore.gameState);
+    const gameState = useSelector((state) => state.gameStateStore);
     const disabled = !!gameState.contractAddress || !!gameState.txHash;
     const defaultValue = gameState.stake;
-    console.log(disabled);
+
     return (
         <FormControl sx={{m: 1}} size="medium">
             <TextField

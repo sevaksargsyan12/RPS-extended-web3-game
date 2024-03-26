@@ -13,7 +13,7 @@ const moveItems = [
 ]
 
 export default function MoveSelection({title = 'Select move', items = moveItems, onSelect}) {
-    const gameState = useSelector((state) => state.gameStateStore.gameState);
+    const gameState = useSelector((state) => state.gameStateStore);
     const disabled = !!gameState.txHash;
     const defaultValue = gameState.move;
     

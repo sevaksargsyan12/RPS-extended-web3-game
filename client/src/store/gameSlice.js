@@ -2,56 +2,55 @@ import { createSlice } from '@reduxjs/toolkit'
 
 const gameState = JSON.parse(localStorage.getItem('gameState') || '{}');
 const initialState = {
-    gameState: {
-        move: '',
-        moveHash: '',
-        stake: 0,
-        txHash: '',
-        txStatus: false,
-        myAddress: '',
-        accAddress1: '',
-        accAddress2: '',
-        contractAddress: '',
-        lastAction: 0,
-    }
+    move: '',
+    moveHash: '',
+    stake: 0,
+    txHash: '',
+    txStatus: false,
+    myAddress: '',
+    accAddress1: '',
+    accAddress2: '',
+    contractAddress: '',
+    lastAction: 0,
 }
 
 export const gameSlice = createSlice({
     name: 'gameState',
-    initialState: {
-        ...initialState,
-        ...gameState,
-    },
+    initialState,
     reducers: {
         updateGameState: (state, action) => {
-            state.gameState = {
-                ...state.gameState,
-                ...action.payload
+            state = {
+                ...state,
+                ...(action.payload || {}),
             }
-
-            // localStorage.setItem('gameState', JSON.stringify(state));
+            localStorage.setItem('gameState', JSON.stringify(state));
+            return state;
         },
         clearGameState: (state, action) => {
-            state.gameState = initialState.gameState
-            console.log(state, 'clearGameState');
-            // localStorage.setItem('gameState', JSON.stringify(state));
+            state = {
+                ...initialState,
+            };
+            localStorage.setItem('gameState', JSON.stringify(state));
+            return state;
         },
     },
 })
 
 // Action creators are generated for each case reducer function
-const updateGameState = (newState) => (dispatch) => {
-    dispatch(gameSlice.actions.updateGameState(newState))
+// const updateGameState = (newState) => (dispatch) => {
+//     dispatch(gameSlice.actions.updateGameState(newState))
 
-    localStorage.setItem('gameState', JSON.stringify(newState));
-}
+//     newState && localStorage.setItem('gameState', JSON.stringify(newState));
+// }
 
-const clearGameState = (newState) => (dispatch) => {
-    dispatch(gameSlice.actions.clearGameState(newState))
+// const clearGameState = (newState) => (dispatch) => {
+//     dispatch(gameSlice.actions.clearGameState(newState))
 
-    localStorage.setItem('gameState', JSON.stringify(newState));
-}
+//     newState && localStorage.setItem('gameState', JSON.stringify(newState));
+// }
 
-export { updateGameState, clearGameState }
+// export { updateGameState, clearGameState }
+
+export const { updateGameState, clearGameState } = gameSlice.actions
 
 export default gameSlice.reducer

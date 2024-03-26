@@ -6,26 +6,31 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-function App({onAction, open, content }) {
+function App() {
+    const [content, setContent] = useState('');
     const [openDialog, setOpen] = useState(false);
-
-    useEffect(() => {
-        if(open) {
-            setOpen(true)
-        }
-    },[open])
+    const [resolver, setResolver] = useState({ resolver: null });
 
     const handleClose = () => {
-        onAction(false);
+        resolver.resolve(false);
         setOpen(false);
     };
 
     const handleConfirm = () => {
-        onAction(true);
+        resolver.resolve(true);
         setOpen(false);
     };
 
-    return (
+    const getConfirmation = async (text) => {
+        setContent(text);
+        setOpen(true);
+
+        return new Promise(( resolve, reject ) => {
+            setResolver({ resolve })
+        });;
+    }
+
+    const PrettyConfirm = () => (
         <div>
             <Dialog
                 open={openDialog}
@@ -50,6 +55,7 @@ function App({onAction, open, content }) {
             </Dialog>
         </div>
     );
+    return [ getConfirmation, PrettyConfirm ]
 }
 
 export default App;

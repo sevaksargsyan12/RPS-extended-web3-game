@@ -12,8 +12,6 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
         onSelect(event.target.value);
         setSelectedValue(event.target.value);
     };
-    console.log(selectedValue, 'selectedValue', typeof selectedValue);
-
     return (
         <>
             <InputLabel id="demo-simple-select-standard-label">{title}</InputLabel>
@@ -32,7 +30,6 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
 
                 {items.map((item) => (<MenuItem sx={{my: 1}} key={item.value} value={item.value} sx={{'height': '50px', 'padding': '14px'}}>
                     <br/>
-                    <Typography component='span' sx={{mr: 2}}>{item.label}</Typography>
                     {item?.icon &&
                         <Box
                         component="img"
@@ -46,6 +43,7 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
                         alt={title}
                         src={item.icon}
                     />}
+                    <Typography component='span' sx={{mr: 2}}>{item.label}</Typography>
                 </MenuItem>))}
             </Select>
         </>
