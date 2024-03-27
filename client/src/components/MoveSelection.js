@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useSelector } from 'react-redux';
 import SelectBox from "../shared/components/SelectBox";
 import {icons} from "../shared/icons";

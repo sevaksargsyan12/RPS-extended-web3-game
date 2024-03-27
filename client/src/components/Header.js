@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { AppBar, Toolbar, Typography } from "@mui/material";
+import {useSelector} from 'react-redux';
+import {AppBar, Toolbar, Typography} from "@mui/material";
 
 const Header = ({}) => {
     const gameState = useSelector((state) => state.gameStateStore);
@@ -10,7 +10,13 @@ const Header = ({}) => {
     } else if (gameState.txHash && gameState.txStatus && !gameState.theWinner) {
         message = 'Waiting for other player\'s move...';
     } else if (gameState.theWinner) {
-        message = gameState.theWinner;
+        if (gameState.theWinner === gameState.myAddress) {
+            message = 'Congratulations!!!!!';
+        } else if (gameState.theWinner === 'tie') {
+            message = 'It is a tie!';
+        } else {
+            message = `You lost :(`;
+        }
     }
     return (
         <AppBar position="static" color="secondary">
@@ -20,10 +26,7 @@ const Header = ({}) => {
                 </Typography>
                 <Typography variant="h6" component="div" sx={{flexGrow: 1}} align="right">
                     {message}
-                </Typography>
-                {gameState?.myAddress && <Typography variant="p" component="div" sx={{flexGrow: 1}} align="right">
-                    My Address: <Typography component="span" sx={{bgcolor: '#fff', p: '2px'}}>{gameState?.myAddress}</Typography>
-                </Typography>}                
+                </Typography>      
             </Toolbar>
         </AppBar>
     );

@@ -80,21 +80,6 @@ const solveTheGame = async (move, salt, contractAddress, fromAccount) => {
 	};
 }
 
-const onTxConfirmation = (txHash, cb) => {
-	let timer = window.setInterval(async () => {
-		console.log('checkcheckcheckcheckcheck');
-		try {
-        	const receipt = await web3.eth.getTransactionReceipt(txHash);
-        	if (receipt?.status) {
-                clearInterval(timer);
-                cb(receipt);
-            }
-        } catch(error) {
-			// Continue to check
-        }
-    }, 1000);
-}
-
 const getTransaction = async (txHash) => {
 	let txData;
 	try {

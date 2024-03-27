@@ -15,6 +15,16 @@ const localStorageMiddleware = (store) => (next) => (action) => {
         localStorage.setItem('gameState', JSON.stringify(action.payload));
         //
     }
+    if (action.type === 'gameState/clearGameState') {
+        console.log(action);
+        console.log(store.getState().gameStateStore);
+        const stateData = store.getState().gameStateStore;
+        action.payload = {
+            myAddress: stateData.myAddress,
+        };
+        // check action, depends on it update localstorage in some logic
+        localStorage.removeItem('gameState');
+    }
     return next(action);
 };
 

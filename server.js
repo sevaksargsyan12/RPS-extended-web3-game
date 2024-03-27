@@ -12,58 +12,56 @@ wss.on('connection', (ws) => {
     }));
   }
 
+  const sendMessageToPlayer = (playerAddress, message) => {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN &&
+        client.address?.toLowerCase() === playerAddress?.toLowerCase()
+      ) {
+        client.send(JSON.stringify(message));
+      }
+    });
+  }
+
   sendUpdatedPlayersData(ws);
 
   ws.on('message', (message) => {
     const data = JSON.parse(message);
 
-    console.log(`Received new message: ${JSON.stringify(data)}`);
-    if (data.type === 'newPlayer') {
-      ws.address = data.address;
+    switch (data.type) {
 
-      wss.clients.forEach((client) => {
-        // Send updated players list to each client. 
-        if (client.readyState === WebSocket.OPEN) {
-          sendUpdatedPlayersData(client);
-        }
-      });
-    }
-    if (data.type === 'newGameRequest') {
-      wss.clients.forEach((client) => {
+      case 'newPlayer':
+        ws.address = data.address;
+        wss.clients.forEach((client) => {
+          // Send updated players list to each client. 
+          if (client.readyState === WebSocket.OPEN) {
+            sendUpdatedPlayersData(client);
+          }
+        });
+        break;
+
+      case 'newGameRequest':
         // Send the player a request to play. 
-        if (client.readyState === WebSocket.OPEN && client.address === data.playerAddress) {
-          client.send(JSON.stringify({
-            type: 'newGameRequest',
-            contractAddress: data.contractAddress,
-          }));
-        }
-      });
-    }
-    if (data.type === 'solveTheGame') {
-      wss.clients.forEach((client) => {
-        // Send the player a request to play. 
-        if (client.readyState === WebSocket.OPEN &&
-          client.address?.toLowerCase() === data.playerAddress?.toLowerCase()
-        ) {
-          client.send(JSON.stringify({
-            type: 'solveTheGame',
-            contractAddress: data.contractAddress,
-          }));
-        }
-      });
-    }
-    if (data.type === 'theWinner') {
-      wss.clients.forEach((client) => {
-        // Send the player a request to play. 
-        if (client.readyState === WebSocket.OPEN &&
-          client.address?.toLowerCase() === data.playerAddress?.toLowerCase()
-        ) {
-          client.send(JSON.stringify({
-            type: 'theWinner',
-            theWinner: data.theWinner,
-          }));
-        }
-      });
+        sendMessageToPlayer(data.playerAddress, {
+          type: 'newGameRequest',
+          contractAddress: data.contractAddress,
+        });
+        break;
+
+      case 'solveTheGame':
+        // Send the player a request to open his move. 
+        sendMessageToPlayer(data.playerAddress, {
+          type: 'solveTheGame',
+          contractAddress: data.contractAddress,
+        });
+        break;
+
+      case 'theWinner':
+        // Send the player the result. 
+        sendMessageToPlayer(data.playerAddress, {
+          type: 'theWinner',
+          theWinner: data.theWinner,
+        });
+        break;
     }
   });
 

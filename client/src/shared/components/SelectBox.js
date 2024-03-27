@@ -4,7 +4,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import {Box, Typography} from "@mui/material";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 
 export default function SelectBox({title = 'Select player', items = [], onSelect, defaultValue, containerClass = 'custom-select'}) {
     const [selectedValue, setSelectedValue] = useState('');
@@ -12,6 +12,11 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
         onSelect(event.target.value);
         setSelectedValue(event.target.value);
     };
+    useEffect(() => {
+        if(!selectedValue) {
+            setSelectedValue(defaultValue);
+        }
+    }, [defaultValue]);
     return (
         <>
             <InputLabel id="demo-simple-select-standard-label">{title}</InputLabel>
@@ -20,7 +25,6 @@ export default function SelectBox({title = 'Select player', items = [], onSelect
                 labelId="demo-simple-select-standard-label"
                 id="demo-simple-select-standard"
                 value={selectedValue}
-                defaultValue={defaultValue}
                 label={title}
                 onChange={handleChange}
             >

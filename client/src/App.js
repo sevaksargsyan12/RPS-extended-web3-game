@@ -1,7 +1,7 @@
 import "./App.css";
 import * as React from "react";
 import {optionsMainTheme} from "./ui/theme/config";
-import {useSelector, useDispatch} from "react-redux";
+import {useSelector, useDispatch, useStore} from "react-redux";
 import Header from "./components/Header";
 import MoveSelection from "./components/MoveSelection";
 import StakeSelection from "./components/StakeSelection";
@@ -39,17 +39,15 @@ export const themeMain = createTheme(optionsMainTheme);
 const {useEffect, useState} = React;
 
 function App() {
+    const {getState} = useStore();
     const [getConfirmation, PrettyConfirm] = usePrettyConfirm();
     const gameState = useSelector((state) => state.gameStateStore);
-    const players = useSelector((state) => state.playersStore.players);
     const dispatch = useDispatch()
     const [player, setPLayer] = useState('');
     const [stake, setStake] = useState('');
     const [move, setMove] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [dialogue, setDialogue] = useState(false);
-    const [dialogueContent, setDialogueContent] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -72,6 +70,8 @@ function App() {
             listenForMessages({
                 updatedPlayersList: (data) => dispatch(setPlayers(data.addressList)),
                 newGameRequest: async (data) => {
+                    const gameState = getState().gameStateStore;
+
                     try {
                         const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
                         // const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}!`)
@@ -91,6 +91,8 @@ function App() {
                     }
                 },
                 solveTheGame: async (data) => {
+                    const gameState = getState().gameStateStore;
+
                     if (!gameState.moveHash) {
                         return;
                     }
@@ -119,6 +121,8 @@ function App() {
                     }
                 },
                 theWinner: (data) => {
+                    const gameState = getState().gameStateStore;
+
                     if (data.theWinner === gameState.myAddress) {
                         setSuccessMessage('Congratulations!!!!!')
                     } else if (data.theWinner === 'tie') {
@@ -251,6 +255,7 @@ function App() {
 
     const restartTheGame = () => {
         dispatch(clearGameState());
+
     }
     const playButtonAddProps =  {disabled: false} // {disabled: !(move && player && stake)}
 
@@ -260,7 +265,7 @@ function App() {
             <Header/>
             <PrettyConfirm />
             <div className="App">
-                <pre style={{display: 'none1'}}>{JSON.stringify(gameState)}</pre>
+                <pre style={{display: 'none'}}>{JSON.stringify(gameState)}</pre>
                 <Box className='game' sx={{mx: 'auto', p: 2, mt: 2,  boxShadow: 3, maxWidth: '620px' }}>
                     <MoveSelection onSelect={setMove}/>
                     <br/>

@@ -4,8 +4,8 @@ import FormControl from "@mui/material/FormControl";
 
 export default function StakeSelection({onSelect}) {
     const gameState = useSelector((state) => state.gameStateStore);
-    const disabled = !!gameState.contractAddress || !!gameState.txHash;
     const defaultValue = Number(gameState.stake);
+    const disabled = !!gameState.contractAddress || !!gameState.txHash;
 
     return (
         <FormControl sx={{m: 1}} size="medium">
