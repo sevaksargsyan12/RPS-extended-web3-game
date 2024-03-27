@@ -53,6 +53,7 @@ function App() {
 
     useEffect(() => {
         (async () => {
+            console.log('###############################');
             // Connect to socket
             await initSocket();
             // Connect to Metamask
@@ -67,60 +68,67 @@ function App() {
                 type: 'newPlayer',
                 address: defaultAccount,
             });
-console.log('[[[[', JSON.stringify(gameState));
             // Listen for socket messages
             listenForMessages({
                 updatedPlayersList: (data) => dispatch(setPlayers(data.addressList)),
                 newGameRequest: async (data) => {
-                    const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
-                    const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}! myAddress ${gameState.myAddress}`)
-                    if(!accepted) {
-                        return;
+                    try {
+                        const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
+                        // const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}!`)
+                        // if(!accepted) {
+                        //     return;
+                        // }
+                        console.log(JSON.stringify(gameState));
+                        dispatch(updateGameState({
+                            stake,
+                            accAddress1,
+                            accAddress2: gameState.myAddress,
+                            contractAddress: data.contractAddress,
+                        }));
+                    } catch (error) {
+                        setErrorMessage('There is something wrong with contract usage!');
+                        console.error(error);
                     }
-            console.log({
-                        stake,
-                        accAddress1,
-                        accAddress2: gameState.myAddress,
-                        contractAddress: data.contractAddress,
-                    }, '[[[[', JSON.stringify(players));
-
-                    dispatch(updateGameState({
-                        stake,
-                        accAddress1,
-                        accAddress2: gameState.myAddress,
-                        contractAddress: data.contractAddress,
-                    }));
                 },
                 solveTheGame: async (data) => {
                     if (!gameState.moveHash) {
                         return;
                     }
-                    let theWinner = 'tie';
-                    const {move2} = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
-                    if (winner(gameState.move, move2)) {
-                        theWinner = gameState.myAddress;
-                        console.log('Congratulations!!!!!');
+                    try {
+                        let theWinner = 'tie';
+                        const {move2} = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
+                        if (winner(gameState.move, move2)) {
+                            theWinner = gameState.myAddress;
+                            setSuccessMessage('Congratulations!')
+                        } else if (winner(move2, gameState.move)) {
+                            theWinner = gameState.accAddress2;
+                            setSuccessMessage(`The Winner is - ${gameState.accAddress2}`)
+                        }
+                        dispatch(updateGameState({
+                            theWinner,
+                        }));
+                        // Send the results to second player
+                        sendMessage({
+                            type: 'theWinner',
+                            playerAddress: gameState.accAddress2,
+                            theWinner,
+                        });
+                    } catch (error) {
+                        setErrorMessage('There is something wrong with contract usage!');
+                        console.error(error);
                     }
-                    if (winner(move2, gameState.move)) {
-                        theWinner = gameState.accAddress2;
-                        console.log('The Winner is - ', gameState.accAddress2);
-                    }
-                    // Send the results to second player
-                    sendMessage({
-                        type: 'theWinner',
-                        playerAddress: gameState.accAddress2,
-                        theWinner,
-                    });
                 },
                 theWinner: (data) => {
                     if (data.theWinner === gameState.myAddress) {
-                        console.log('Congratulations!!!!!');
-                    }
-                    if (data.theWinner === 'tie') {
-                        console.log('It is a tie!')
+                        setSuccessMessage('Congratulations!!!!!')
+                    } else if (data.theWinner === 'tie') {
+                        setSuccessMessage('It is a tie!')
                     } else {
-                        console.log('The Winner is - ', data.theWinner);
+                        setSuccessMessage(`The Winner is - ${data.theWinner}`);
                     }
+                    dispatch(updateGameState({
+                        theWinner: data.theWinner,
+                    }));
                 }
             })
         })();
@@ -140,7 +148,6 @@ console.log('[[[[', JSON.stringify(gameState));
                     // Continue to check...
                     return;
                 }
-                console.log(gameState.myAddress === gameState.accAddress2, gameState.myAddress === gameState.accAddress1, 'TRANSACTION CONFIRMED!!!', txData);
                 setSuccessMessage('TRANSACTION CONFIRMED!!!');
                 // Player 1 tx confirmation
                 if (gameState.myAddress === gameState.accAddress1) {
@@ -179,9 +186,14 @@ console.log('[[[[', JSON.stringify(gameState));
                 if (now - lastAction < 1000*60*6) {
                     return;
                 }
-                setErrorMessage('Timeout: player doesn\'t move. Resetting the game...');
-                await onTimeout(gameState.contractAddress, gameState.myAddress === gameState.accAddress2);
-                dispatch(clearGameState());
+                try {
+                    await onTimeout(gameState.contractAddress, gameState.myAddress === gameState.accAddress2);
+                    setErrorMessage('Timeout: player doesn\'t move. Resetting the game...');
+                    dispatch(clearGameState());
+                } catch (error) {
+                    setErrorMessage('There is something wrong with contract usage!');
+                    console.error(error);
+                }
             }, 60 * 1000);
         } else {
             clearInterval(timeoutInterval);
@@ -194,11 +206,11 @@ console.log('[[[[', JSON.stringify(gameState));
 
     const play = async () => {
         if (!gameState.myAddress) {
-            alert('Please connect to metamask');
+            setErrorMessage('Please connect to metamask');
             return;
         }
         if (gameState.txHash) {
-            alert('There is ongoing game!');
+            setErrorMessage('There is ongoing game!');
             return;
         }
         // Start a new game
@@ -216,6 +228,7 @@ console.log('[[[[', JSON.stringify(gameState));
                     lastAction: new Date().getTime(),
                 }));
             } catch (error) {
+                setErrorMessage('There is something wrong with contract usage!');
                 console.error(error);
             }
         }
@@ -230,6 +243,7 @@ console.log('[[[[', JSON.stringify(gameState));
                     lastAction: new Date().getTime(),
                 }));
             } catch (error) {
+                setErrorMessage('There is something wrong with contract usage!');
                 console.error(error);
             }
         }

@@ -40,7 +40,7 @@ const startNewGame = async (move, player, stake, fromAccount) => {
 	            	txHash,
 	            	moveHash,
 	            })
-	        }).once('error', reject);
+	        }).on('error', reject);
 		} catch(error) {
 			reject(error);
 		}
@@ -61,7 +61,7 @@ const playTheGame = async (move, stake, contractAddress, fromAccount) => {
 		        resolve({
 	            	txHash,
 	            })
-		    }).once('error', reject);
+		    }).on('error', reject);
 		} catch(error) {
 			reject(error);
 		}
@@ -107,7 +107,7 @@ const getTransaction = async (txHash) => {
 
 const onTimeout = async (contractAddress, player1Timeout) => {
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
-	if (player1Timeout) {		
+	if (player1Timeout) {
 		await RPSContract.methods.j1Timeout().call();
 	} else {
 		await RPSContract.methods.j2Timeout().call();
@@ -120,7 +120,7 @@ const fetchDataFromContract = async (contractAddress) => {
 	const stake = await RPSContract.methods.stake().call();
 
 	return {
-		accAddress1,
+		accAddress1: accAddress1.toLowerCase(),
 		stake: web3.utils.fromWei(stake, 'ether'),
 	}
 }
