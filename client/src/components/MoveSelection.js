@@ -1,7 +1,7 @@
-import { useSelector } from 'react-redux';
-import SelectBox from "../shared/components/SelectBox";
+import { useSelector } from "react-redux";
 import {icons} from "../shared/icons";
 import FormControl from "@mui/material/FormControl";
+import SelectBox from "../shared/components/SelectBox";
 
 const moveItems = [
     {value: 2, label: 'Paper', icon: icons.paper},

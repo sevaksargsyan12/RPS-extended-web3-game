@@ -1,8 +1,8 @@
-import React from 'react';
-import {useSelector} from 'react-redux';
+import React from "react";
+import {useSelector} from "react-redux";
 import {AppBar, Toolbar, Typography} from "@mui/material";
 
-const Header = ({}) => {
+const Header = () => {
     const gameState = useSelector((state) => state.gameStateStore);
     let message;
     if (gameState.txHash && !gameState.txStatus) {

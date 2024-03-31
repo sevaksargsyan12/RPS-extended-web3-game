@@ -43,15 +43,14 @@ function App() {
     const [getConfirmation, PrettyConfirm] = usePrettyConfirm();
     const gameState = useSelector((state) => state.gameStateStore);
     const dispatch = useDispatch()
-    const [player, setPLayer] = useState('');
-    const [stake, setStake] = useState('');
     const [move, setMove] = useState('');
+    const [stake, setStake] = useState('');
+    const [player, setPlayer] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         (async () => {
-            console.log('###############################');
             // Connect to socket
             await initSocket();
             // Connect to Metamask
@@ -74,11 +73,10 @@ function App() {
 
                     try {
                         const {accAddress1, stake} = await fetchDataFromContract(data.contractAddress);
-                        // const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}!`)
-                        // if(!accepted) {
-                        //     return;
-                        // }
-                        console.log(JSON.stringify(gameState));
+                        const accepted = await getConfirmation(`New Game request from ${accAddress1} with stake ${stake}!`)
+                        if(!accepted) {
+                            return;
+                        }
                         dispatch(updateGameState({
                             stake,
                             accAddress1,
@@ -96,9 +94,13 @@ function App() {
                     if (!gameState.moveHash) {
                         return;
                     }
+                    const password = await getConfirmation(`Please provide your password to reveal your move!`, true);
+                    if(!password) {
+                        return;
+                    }
                     try {
                         let theWinner = 'tie';
-                        const {move2} = await solveTheGame(gameState.move, gameState.salt, data.contractAddress, gameState.myAddress);
+                        const {move2} = await solveTheGame(password, data.contractAddress, gameState.myAddress);
                         if (winner(gameState.move, move2)) {
                             theWinner = gameState.myAddress;
                             setSuccessMessage('Congratulations!')
@@ -140,7 +142,7 @@ function App() {
         return () => {
             disconnectSocket();
         }
-    }, []);
+    });
     useEffect(() => {
         let timeoutInterval;
         let txStatusInterval;
@@ -186,7 +188,7 @@ function App() {
             timeoutInterval = setInterval(async () => {
                 const now = new Date();
                 const lastAction = new Date(gameState.lastAction);
-                console.log(now - lastAction, 1000*60*5, new Date());
+
                 if (now - lastAction < 1000*60*6) {
                     return;
                 }
@@ -220,10 +222,13 @@ function App() {
         // Start a new game
         if (!gameState.contractAddress) {
             try {
-                const {txHash, moveHash} = await startNewGame(move, player, stake, gameState.myAddress);
+                const password = await getConfirmation(`Please select a password and keep in mind to reveal your move!`, true);
+                if(!password) {
+                    return;
+                }
+                const {txHash, moveHash} = await startNewGame(move, player, stake, password, gameState.myAddress);
 
                 dispatch(updateGameState({
-                    move,
                     stake,
                     txHash,
                     moveHash,
@@ -255,9 +260,8 @@ function App() {
 
     const restartTheGame = () => {
         dispatch(clearGameState());
-
     }
-    const playButtonAddProps =  {disabled: false} // {disabled: !(move && player && stake)}
+    const playButtonAddProps =  {disabled: !(player && stake)}
 
     return (
         <ThemeProvider theme={themeMain}>
@@ -269,7 +273,7 @@ function App() {
                 <Box className='game' sx={{mx: 'auto', p: 2, mt: 2,  boxShadow: 3, maxWidth: '620px' }}>
                     <MoveSelection onSelect={setMove}/>
                     <br/>
-                    <PlayerSelection onSelect={setPLayer}/>
+                    <PlayerSelection onSelect={setPlayer}/>
                     <br/>
                     <StakeSelection onSelect={setStake}/>
                     <br/>

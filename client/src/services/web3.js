@@ -1,6 +1,8 @@
 import { Web3 } from "web3";
+import passworder from "browser-passworder";
 import RPS from "../contracts/RPS.json";
 import Hasher from "../contracts/Hasher.json";
+import { setObject, getObject } from "./webStorage";
 
 let web3;
 
@@ -20,10 +22,11 @@ const initWeb3 = async () => {
     return accounts?.[0]?.toLowerCase();
 }
 
-const startNewGame = async (move, player, stake, fromAccount) => {
-	const RPSContract = new web3.eth.Contract(RPS.abi);//@TODO move to config
-    const hasherContract = new web3.eth.Contract(Hasher.abi, '0x4935C04cC2e05A20bd075046F787E81F8bB21d22');
-    const moveHash = await hasherContract.methods.hash(move, '111111').call();
+const startNewGame = async (move, player, stake, password, fromAccount) => {
+	const salt = await generateAndSaveSalt(move, password);
+	const RPSContract = new web3.eth.Contract(RPS.abi);
+    const hasherContract = new web3.eth.Contract(Hasher.abi, process.env.HASHER_CONTRACT_ADDRESS);
+    const moveHash = await hasherContract.methods.hash(move, salt).call();
     const contractDeployer = RPSContract.deploy({
         data: RPS.bytecode,
         arguments: [moveHash, player],
@@ -68,13 +71,15 @@ const playTheGame = async (move, stake, contractAddress, fromAccount) => {
 	});
 }
 
-const solveTheGame = async (move, salt, contractAddress, fromAccount) => {
+const solveTheGame = async (password, contractAddress, fromAccount) => {
+	const { salt, move } = await restoreSaltAndMove(password)
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
 	
-	await RPSContract.methods.solve(move, '111111').call({
+	await RPSContract.methods.solve(move, salt).call({
 		from: fromAccount,
 	});
 	const move2 = await RPSContract.methods.c2().call();
+
 	return {
 		move2: Number(move2),
 	};
@@ -117,6 +122,35 @@ const winner = (player1, player2) => {
     	return player1 < player2;
     else 
     	return player1 > player2;
+}
+
+const generateAndSaveSalt = async (move, password) => {
+	const randomNumbers = window.crypto.getRandomValues(new Uint8Array(16));
+
+	// convert byte array to hexademical representation
+	const bytesHex = randomNumbers.reduce((o, v) => o + ('00' + v.toString(16)).slice(-2), '');
+
+	// convert hexademical value to a decimal string
+	const salt = window.BigInt('0x' + bytesHex).toString(10);
+
+	const keysBlob = await passworder.encrypt(password, {
+		move,
+		salt,
+	});
+
+	// Save to storage
+	setObject('RPSSLkeys', keysBlob);
+
+	return salt;
+}
+
+const restoreSaltAndMove = async (password) => {
+	// Get from storage
+	const keysBlob = getObject('RPSSLkeys');
+
+	const result = await passworder.decrypt(password, keysBlob);
+
+	return result;
 }
 
 export {

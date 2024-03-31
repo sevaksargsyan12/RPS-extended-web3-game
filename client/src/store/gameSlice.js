@@ -1,6 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit';
+import { getObject } from '../services/webStorage';
 
-const gameState = JSON.parse(localStorage.getItem('gameState') || '{}');
+const gameState = getObject('RPSSLgameState');
 const initialState = {
     move: '',
     moveHash: '',
@@ -34,21 +35,6 @@ export const gameSlice = createSlice({
         },
     },
 })
-
-// Action creators are generated for each case reducer function
-// const updateGameState = (newState) => (dispatch) => {
-//     dispatch(gameSlice.actions.updateGameState(newState))
-
-//     newState && localStorage.setItem('gameState', JSON.stringify(newState));
-// }
-
-// const clearGameState = (newState) => (dispatch) => {
-//     dispatch(gameSlice.actions.clearGameState(newState))
-
-//     newState && localStorage.setItem('gameState', JSON.stringify(newState));
-// }
-
-// export { updateGameState, clearGameState }
 
 export const { updateGameState, clearGameState } = gameSlice.actions
 

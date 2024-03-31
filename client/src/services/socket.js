@@ -1,7 +1,7 @@
 let socket;
 
 const initSocket = () => {//@TODO move to config
-	socket = new WebSocket('ws://localhost:8080');
+	socket = new WebSocket(process.env.SOCKET_URL);
 
 	return new Promise(resolve => {
 		socket.onopen = resolve;
@@ -28,7 +28,6 @@ const listenForMessages = async (messages) => {
 
 const sendMessage = async (data) => {
 	if(!socket) {
-		console.log('INITSOCKET')
   		await initSocket();
   	}
 	socket.send(JSON.stringify(data));
