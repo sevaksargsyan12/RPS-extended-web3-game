@@ -95,12 +95,12 @@ const getTransaction = async (txHash) => {
 	return txData;
 }
 
-const onTimeout = async (contractAddress, player1Timeout) => {
+const onTimeout = async (contractAddress, player1Timeout, fromAccount) => {
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
 	if (player1Timeout) {
-		await RPSContract.methods.j1Timeout().call();
+		await RPSContract.methods.j1Timeout().send({ from: fromAccount });
 	} else {
-		await RPSContract.methods.j2Timeout().call();
+		await RPSContract.methods.j2Timeout().send({ from: fromAccount });
 	}
 }
 

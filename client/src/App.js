@@ -193,7 +193,7 @@ function App() {
                     return;
                 }
                 try {
-                    await onTimeout(gameState.contractAddress, gameState.myAddress === gameState.accAddress2);
+                    await onTimeout(gameState.contractAddress, gameState.myAddress === gameState.accAddress2, gameState.myAddress);
                     setErrorMessage('Timeout: player doesn\'t move. Resetting the game...');
                     dispatch(clearGameState());
                 } catch (error) {
