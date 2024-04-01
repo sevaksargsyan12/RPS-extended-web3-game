@@ -100,11 +100,11 @@ function App() {
                     }
                     try {
                         let theWinner = 'tie';
-                        const {move2} = await solveTheGame(password, data.contractAddress, gameState.myAddress);
-                        if (winner(gameState.move, move2)) {
+                        const {move, move2} = await solveTheGame(password, data.contractAddress, gameState.myAddress);
+                        if (winner(move, move2)) {
                             theWinner = gameState.myAddress;
                             setSuccessMessage('Congratulations!')
-                        } else if (winner(move2, gameState.move)) {
+                        } else if (winner(move2, move)) {
                             theWinner = gameState.accAddress2;
                             setSuccessMessage(`The Winner is - ${gameState.accAddress2}`)
                         }

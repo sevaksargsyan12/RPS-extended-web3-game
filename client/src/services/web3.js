@@ -25,7 +25,6 @@ const initWeb3 = async () => {
 const startNewGame = async (move, player, stake, password, fromAccount) => {
 	const salt = await generateAndSaveSalt(move, password);
 	const RPSContract = new web3.eth.Contract(RPS.abi);
-	console.log(process.env.REACT_APP_HASHER_CONTRACT_ADDRESS, 'process.env.REACT_APP_HASHER_CONTRACT_ADDRESS');
     const hasherContract = new web3.eth.Contract(Hasher.abi, process.env.REACT_APP_HASHER_CONTRACT_ADDRESS);
     const moveHash = await hasherContract.methods.hash(move, salt).call();
     const contractDeployer = RPSContract.deploy({
@@ -82,6 +81,7 @@ const solveTheGame = async (password, contractAddress, fromAccount) => {
 	const move2 = await RPSContract.methods.c2().call();
 
 	return {
+		move,
 		move2: Number(move2),
 	};
 }
@@ -99,9 +99,9 @@ const getTransaction = async (txHash) => {
 const onTimeout = async (contractAddress, player1Timeout, fromAccount) => {
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
 	if (player1Timeout) {
-		await RPSContract.methods.j1Timeout().send({ from: fromAccount });
+		await RPSContract.methods.j1Timeout().call({ from: fromAccount });
 	} else {
-		await RPSContract.methods.j2Timeout().send({ from: fromAccount });
+		await RPSContract.methods.j2Timeout().call({ from: fromAccount });
 	}
 }
 
