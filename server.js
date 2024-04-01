@@ -1,5 +1,6 @@
+require('dotenv').config();
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.ENV.SOCKET_PORT });
+const wss = new WebSocket.Server({ port: process.env.SOCKET_PORT });
 
 wss.on('connection', (ws) => {
   console.log('New client connected');
