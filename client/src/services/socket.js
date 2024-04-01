@@ -1,7 +1,7 @@
 let socket;
 
-const initSocket = () => {
-	const HOST = location.origin.replace(/^http/, 'ws').replace(/^https/, 'wss');
+const initSocket = (origin) => {
+	const HOST = origin.replace(/^http/, 'ws').replace(/^https/, 'wss');
 	socket = new WebSocket(HOST);
 
 	return new Promise(resolve => {

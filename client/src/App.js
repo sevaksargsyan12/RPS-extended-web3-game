@@ -52,7 +52,7 @@ function App() {
     useEffect(() => {
         (async () => {
             // Connect to socket
-            await initSocket();
+            await initSocket(window.location.origin);
             // Connect to Metamask
             const defaultAccount = await initWeb3();
             setSuccessMessage('CONNECTED!')
