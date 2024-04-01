@@ -10,8 +10,8 @@
   "scripts": {
     "client": "npm start --prefix client",
     "server": "node server",
-    "start": "concurrently -n \"FRONTEND,BACKEND\" -c \"red,blue\" -p \"[{name}]\" \"npm run server\" \"npm run client\"",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "start": "npm run server && npm run client",
+    "heroku-postbuild": "npm install && cd client && npm install && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
