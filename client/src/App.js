@@ -142,7 +142,7 @@ function App() {
         return () => {
             disconnectSocket();
         }
-    });
+    }, []);
     useEffect(() => {
         let timeoutInterval;
         let txStatusInterval;
