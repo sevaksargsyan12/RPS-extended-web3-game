@@ -13,7 +13,7 @@ const initSocket = (origin) => {
 const disconnectSocket = () => {
   	if(socket) {
   		console.log(socket, '+++++++++');
-  		socket.disconnect();
+  		socket.close();
   	}
 }
 
