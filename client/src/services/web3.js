@@ -25,7 +25,7 @@ const initWeb3 = async () => {
 const startNewGame = async (move, player, stake, password, fromAccount) => {
 	const salt = await generateAndSaveSalt(move, password);
 	const RPSContract = new web3.eth.Contract(RPS.abi);
-    const hasherContract = new web3.eth.Contract(Hasher.abi, process.env.HASHER_CONTRACT_ADDRESS);
+    const hasherContract = new web3.eth.Contract(Hasher.abi, process.env.REACT_APP_HASHER_CONTRACT_ADDRESS);
     const moveHash = await hasherContract.methods.hash(move, salt).call();
     const contractDeployer = RPSContract.deploy({
         data: RPS.bytecode,

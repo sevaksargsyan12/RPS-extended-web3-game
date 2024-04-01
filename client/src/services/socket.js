@@ -1,7 +1,7 @@
 let socket;
 
-const initSocket = () => {//@TODO move to config
-	socket = new WebSocket(process.env.SOCKET_URL);
+const initSocket = () => {
+	socket = new WebSocket(process.env.REACT_APP_SOCKET_URL);
 
 	return new Promise(resolve => {
 		socket.onopen = resolve;
