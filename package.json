@@ -1,6 +1,19 @@
 {
+  "name": "backend-rps",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
     "dotenv": "^16.4.5",
     "ws": "^8.16.0"
+  },
+  "main": "server.js",
+  "scripts": {
+    "client": "npm start --prefix client",
+    "server": "node server",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "heroku-postbuild": "cd client && npm install && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
