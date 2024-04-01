@@ -1,7 +1,8 @@
 let socket;
 
 const initSocket = () => {
-	socket = new WebSocket(process.env.REACT_APP_SOCKET_URL);
+	const HOST = location.origin.replace(/^http/, 'ws').replace(/^https/, 'wss');
+	socket = new WebSocket(HOST);
 
 	return new Promise(resolve => {
 		socket.onopen = resolve;
