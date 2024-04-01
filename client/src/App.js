@@ -261,7 +261,7 @@ function App() {
     const restartTheGame = () => {
         dispatch(clearGameState());
     }
-    const playButtonAddProps =  {disabled: !(player && stake)}
+    const playButtonAddProps =  {disabled: !!gameState.txHash}
 
     return (
         <ThemeProvider theme={themeMain}>
@@ -269,7 +269,6 @@ function App() {
             <Header/>
             <PrettyConfirm />
             <div className="App">
-                <pre style={{display: 'none'}}>{JSON.stringify(gameState)}</pre>
                 <Box className='game' sx={{mx: 'auto', p: 2, mt: 2,  boxShadow: 3, maxWidth: '620px' }}>
                     <MoveSelection onSelect={setMove}/>
                     <br/>

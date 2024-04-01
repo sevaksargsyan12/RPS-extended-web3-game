@@ -6,13 +6,11 @@ const initSocket = (origin) => {
 
 	return new Promise(resolve => {
 		socket.onopen = resolve;
-		console.log(HOST, socket, '---------');
 	});
 }
 
 const disconnectSocket = () => {
   	if(socket) {
-  		console.log(socket, '+++++++++');
   		socket.close();
   	}
 }
