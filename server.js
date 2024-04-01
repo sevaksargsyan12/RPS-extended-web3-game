@@ -1,6 +1,19 @@
 require('dotenv').config();
+const path = require('path');
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: process.env.SOCKET_PORT });
+const express = require('express');
+
+const app = express();
+const PORT = process.env.PORT;
+
+const buildPath = path.join(__dirname, 'client', 'build');
+app.use(express.static(buildPath));
+
+server = app.listen(PORT, () => {
+  console.log(`server started on port ${PORT}`);
+});
+
+const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
   console.log('New client connected');

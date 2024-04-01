@@ -4,16 +4,13 @@
   "private": true,
   "dependencies": {
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "ws": "^8.16.0"
   },
   "main": "server.js",
   "scripts": {
     "client": "npm start --prefix client",
-    "server": "node server",
-    "start": "npm run server && npm run client",
+    "start": "node server.js",
     "heroku-postbuild": "npm install && cd client && npm install && npm run build"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2"
   }
 }
