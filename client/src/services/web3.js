@@ -75,9 +75,7 @@ const solveTheGame = async (password, contractAddress, fromAccount) => {
 	const { salt, move } = await restoreSaltAndMove(password)
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
 	
-	await RPSContract.methods.solve(move, salt).call({
-		from: fromAccount,
-	});
+	await RPSContract.methods.solve(move, salt).send({ from: fromAccount });
 	const move2 = await RPSContract.methods.c2().call();
 
 	return {
@@ -99,9 +97,9 @@ const getTransaction = async (txHash) => {
 const onTimeout = async (contractAddress, player1Timeout, fromAccount) => {
 	const RPSContract = new web3.eth.Contract(RPS.abi, contractAddress);
 	if (player1Timeout) {
-		await RPSContract.methods.j1Timeout().call({ from: fromAccount });
+		await RPSContract.methods.j1Timeout().send({ from: fromAccount });
 	} else {
-		await RPSContract.methods.j2Timeout().call({ from: fromAccount });
+		await RPSContract.methods.j2Timeout().send({ from: fromAccount });
 	}
 }
 
