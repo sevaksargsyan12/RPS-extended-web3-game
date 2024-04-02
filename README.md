@@ -1,5 +1,7 @@
 # Rock, Paper, Scissors, Lizard, Spock game based on web3 decentralized app
 
+For video demonstration click on image below
+
 [![Rock, Paper, Scissors, Lizard, Spock](https://img.youtube.com/vi/GHk0B8LvcHg/0.jpg)](https://www.youtube.com/watch?v=GHk0B8LvcHg)
 
 ## Table of Contents
